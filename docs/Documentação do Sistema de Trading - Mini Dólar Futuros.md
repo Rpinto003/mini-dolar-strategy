@@ -207,7 +207,5 @@ system.show_dashboard()
 - v2.0: Sistema distribuído
 
 ### 11. Contato e Suporte
-- Email: suporte@trading.com
-- GitHub: github.com/trading-system
-- Documentation: docs.trading.com
-- Forum: forum.trading.com
+- Email: rlcp06@gmail.com
+- GitHub: github.com/Rpinto003

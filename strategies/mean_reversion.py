@@ -8,16 +8,10 @@ class MeanReversionStrategy(BaseStrategy):
         self.lookback = lookback
         
     def generate_signals(self) -> pd.Series:
-        # Calculate mean and std
         mean = self.data['close'].rolling(window=self.lookback).mean()
         std = self.data['close'].rolling(window=self.lookback).std()
-        
-        # Calculate z-score
         z_score = (self.data['close'] - mean) / std
-        
-        # Generate signals
         signals = pd.Series(index=self.data.index, data=0)
-        signals[z_score > 1] = -1  # Sell signal
-        signals[z_score < -1] = 1  # Buy signal
-        
+        signals[z_score > 1] = -1
+        signals[z_score < -1] = 1
         return signals

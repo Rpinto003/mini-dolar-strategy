@@ -1,40 +1,102 @@
+# Enhanced Mini-Dólar Trading Strategy
 
-# Mini Dolar Strategy
+Este projeto implementa uma estratégia avançada de trading para o mini contrato de dólar (WDO) utilizando uma combinação de machine learning e análise técnica.
 
-This project aims to develop a trading strategy for the mini dolar (WDO) futures contract on the Brazilian stock exchange.
+## Características Principais
 
-## Current Strategy
+### 1. Análise de Contexto de Mercado
+- Identificação de horários importantes (9h-10h, 10:30-11:30, 15h-16h)
+- Volume Profile e Point of Control (POC)
+- Referências do dia anterior
 
-The current strategy is based on a machine learning model implemented in the `ml_strategy` directory. The main components are:
+### 2. Indicadores Técnicos Avançados
+- EMAs adaptativas (9 e 21 períodos)
+- RSI com detecção de divergências
+- ATR para análise de volatilidade
+- Bandas de Bollinger
+- Análise de volume relativo
 
-1. **Data Processor**: Responsible for loading and processing the input data.
-2. **Feature Engineering**: Implements feature engineering to prepare the input data.
-3. **Model**: Implements the machine learning model, including the neural network architecture, training, and inference.
-4. **Risk Manager**: Contains logic to manage the risk of the trading strategy.
+### 3. Sistema de Sinais Combinados
+- Scalping em tendência forte
+- Reversão em extremos com confirmação
+- Breakout de ranges
 
-The strategy uses a multi-class classification approach to predict whether the next price movement will be a CALL, PUT, or remain neutral. The model is trained using LightGBM and cross-validation.
+### 4. Gestão de Risco Dinâmica
+- Sizing baseado em volatilidade
+- Stop loss adaptativo
+- Filtros de volume e volatilidade
 
-## Proposed Improvements
+### 5. Machine Learning Otimizado
+- Random Forest Classifier
+- Features selecionadas especificamente para WDO
+- Normalização adaptativa dos dados
 
-After analyzing the current implementation, here are some suggestions for improvements:
+## Instalação
 
-1. **Hyperparameter Optimization**: Implement a hyperparameter search to find the optimal parameters for the LightGBM model, such as learning rate, max depth, and number of leaves.
-2. **Additional Features**: Incorporate more features into the model, such as macroeconomic indicators, sentiment analysis, or information about related options.
-3. **Binary Classification vs. Multi-Class**: Compare the current multi-class classification approach with a binary classification (CALL vs. PUT) to see which provides better performance.
-4. **Feature Importance Analysis**: Perform a feature importance analysis to identify the key drivers of the model and guide future improvements.
-5. **Ensemble Models**: Experiment with combining multiple machine learning models (e.g., LightGBM, XGBoost, Random Forest) in an ensemble to improve the predictive capability.
+1. Clone o repositório:
+```bash
+git clone https://github.com/Rpinto003/mini-dolar-strategy.git
+cd mini-dolar-strategy
+```
 
-These improvements can help enhance the machine learning strategy and the identification of CALL and PUT opportunities.
+2. Instale as dependências:
+```bash
+pip install -r requirements.txt
+```
 
-## Backtest and Performance Analysis
+3. Instale o TA-Lib:
+Windows:
+```bash
+pip install TA-Lib
+```
+Linux:
+```bash
+sudo apt-get update
+sudo apt-get install ta-lib
+pip install TA-Lib
+```
 
-The project includes a backtest module and a performance analysis component. The backtest results and performance metrics are displayed in the main script.
+## Configuração
 
-## Next Steps
+1. Ajuste o caminho do banco de dados em `main.py`:
+```python
+db_path = "caminho/para/seu/banco/candles.db"
+```
 
-1. Implement the proposed improvements to the machine learning strategy.
-2. Expand the strategy module to include additional trading strategies, such as rule-based or hybrid approaches.
-3. Conduct thorough testing and evaluation of the strategies using the backtest and performance analysis tools.
-4. Document the trading strategies, their rationale, and the results of the backtesting.
-5. Continuously monitor and update the strategies as market conditions and data evolve.
+2. Configure os parâmetros da estratégia em `enhanced_strategy.py` conforme necessário.
 
+## Uso
+
+1. Execute a estratégia:
+```bash
+python main.py
+```
+
+2. Analise os resultados nos gráficos e métricas gerados.
+
+## Estrutura do Projeto
+
+- `main.py`: Ponto de entrada do programa
+- `enhanced_strategy.py`: Implementação da estratégia avançada
+- `backtest.py`: Sistema de backtest
+- `data.py`: Carregamento e processamento de dados
+- `analysis.py`: Análise de performance
+
+## Notas Importantes
+
+1. Horários de Operação
+   - A estratégia opera principalmente durante o horário comercial (9h-17h)
+   - Evita operações no horário de almoço (12h-13h)
+
+2. Gestão de Risco
+   - Tamanho máximo da posição: 2 contratos
+   - Stop loss dinâmico baseado em ATR
+   - Filtros de volume e volatilidade
+
+## Contribuições
+
+Contribuições são bem-vindas! Por favor, sinta-se à vontade para abrir issues ou enviar pull requests.
+
+## Licença
+
+Este projeto está licenciado sob a licença MIT.

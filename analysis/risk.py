@@ -13,3 +13,5 @@ class RiskAnalyzer:
             'sharpe': self._calculate_sharpe()
         }
         return metrics
+    
+    

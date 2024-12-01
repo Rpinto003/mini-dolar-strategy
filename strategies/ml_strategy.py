@@ -1,6 +1,7 @@
 from .base_strategy import BaseStrategy
 from ml_strategy.data_processor import DataProcessor
 from ml_strategy.model import MLModel
+from strategies.risk_manager import RiskManager
 import pandas as pd
 
 class MLTradingStrategy(BaseStrategy):
@@ -12,6 +13,7 @@ class MLTradingStrategy(BaseStrategy):
         self.model = MLModel()
         self.trained = False
         self.trade_params = {}
+        self.risk_manager = RiskManager(data)
         
     def _create_labels(self, horizon: int = 5) -> pd.Series:
         """
@@ -85,7 +87,7 @@ class MLTradingStrategy(BaseStrategy):
             raise ValueError("Strategy needs to be trained first")
             
         features = self.data_processor.prepare_features()
-        predictions, prediction_info = self.model.predict(features)
+        predictions = self.model.predict(features)
         
         signals = pd.Series(0, index=self.data.index)
         current_price = self.data['Close'].iloc[-1]

@@ -37,6 +37,21 @@ def main():
     backtester = Backtester(strategy)
     results = backtester.run()
     
+    if not results.empty:
+        # Analisar resultados
+        analyzer = PerformanceAnalyzer(results, strategy.data)
+        metrics = analyzer.analyze()
+        
+        # Imprimir resultados
+        print("\nPerformance Metrics:")
+        for metric, value in metrics.items():
+            print(f"{metric}: {value}")
+        
+        # Plotar resultados
+        analyzer.plot_results("ML Strategy")
+    else:
+        print("Backtest failed due to previous errors.")
+    
     # Analisar resultados
     analyzer = PerformanceAnalyzer(results, strategy.data)
     metrics = analyzer.analyze()

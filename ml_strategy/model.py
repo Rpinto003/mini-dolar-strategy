@@ -1,10 +1,41 @@
 import lightgbm as lgb
-from sklearn.preprocessing import StandardScaler
+from sklearn.model_selection import GridSearchCV
 from sklearn.model_selection import TimeSeriesSplit
-from sklearn.utils import class_weight
 import numpy as np
 import pandas as pd
-from typing import Dict, Tuple
+from sklearn.preprocessing import StandardScaler
+from sklearn.utils import class_weight
+
+class HyperparameterOptimizer:
+    def __init__(self, X, y):
+        self.X = X
+        self.y = y
+        self.best_params_ = None
+
+    def optimize(self):
+        # Definir os hiperparâmetros a serem otimizados
+        param_grid = {
+            'learning_rate': [0.05, 0.1, 0.2],
+            'max_depth': [6, 8, 10],
+            'num_leaves': [64, 128, 256],
+            'min_child_samples': [10, 20, 30]
+        }
+
+        # Definir a validação cruzada com split temporal
+        tscv = TimeSeriesSplit(n_splits=5)
+
+        # Criar o modelo GridSearchCV
+        model = lgb.LGBMClassifier(objective='multiclass', metric='multi_logloss')
+        grid_search = GridSearchCV(estimator=model, param_grid=param_grid, cv=tscv, scoring='accuracy', n_jobs=-1)
+
+        # Executar a otimização de hiperparâmetros
+        print("Iniciando a otimização de hiperparâmetros...")
+        grid_search.fit(self.X, self.y)
+
+        self.best_params_ = grid_search.best_params_
+        print(f"Melhores hiperparâmetros: {self.best_params_}")
+
+        return self.best_params_
 
 class MLModel:
     """Classe responsável pelo treinamento e predição"""
@@ -17,20 +48,24 @@ class MLModel:
         """Treina o modelo"""
         print("Scaling features...")
         X_scaled = self.scaler.fit_transform(X)
-        
-        # Definir os parâmetros do LightGBM
+
+        # Otimizar hiperparâmetros
+        optimizer = HyperparameterOptimizer(X_scaled, y)
+        self.best_params_ = optimizer.optimize()
+
+        # Definir os parâmetros do LightGBM usando os melhores valores
         params = {
             'objective': 'multiclass',
             'num_class': 3,
-            'learning_rate': 0.1,
-            'max_depth': 8,
-            'num_leaves': 128,
-            'min_child_samples': 10,
+            'learning_rate': self.best_params_['learning_rate'],
+            'max_depth': self.best_params_['max_depth'],
+            'num_leaves': self.best_params_['num_leaves'],
+            'min_child_samples': self.best_params_['min_child_samples'],
             'feature_fraction': 0.9,
             'bagging_fraction': 0.9,
-            'metric': 'multi_logloss'  # Definir explicitamente o métrico
+            'metric': 'multi_logloss'
         }
-        
+
         print("Calculando pesos de classe...")
         # Calcular pesos de classe
         class_weights = class_weight.compute_class_weight(

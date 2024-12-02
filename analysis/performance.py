@@ -8,7 +8,38 @@ from plotly.subplots import make_subplots
 class PerformanceAnalyzer:
     def __init__(self, results: pd.DataFrame, strategy_data: pd.DataFrame):
         self.results = results
-        self.strategy_data = strategy_data  # Adicionando dados da estratégia
+        self.strategy_data = strategy_data
+        self._prepare_results()
+
+    def _prepare_results(self):
+        """Prepara o DataFrame de resultados com cálculos iniciais"""
+        try:
+            INITIAL_CAPITAL = 100000.00  # Capital inicial definido
+            print(f"\nDebug - Preparando resultados:")
+            print(f"Capital Inicial Definido: ${INITIAL_CAPITAL:,.2f}")
+            
+            # Certificar que temos as colunas necessárias
+            if 'signal' in self.results and 'price' in self.results:
+                # Calcular retornos da estratégia
+                self.results['strategy_returns'] = self.results['signal'].shift(1) * (
+                    self.results['price'].pct_change()
+                )
+                
+                # Calcular equity começando com o capital inicial
+                self.results['equity'] = INITIAL_CAPITAL * (1 + self.results['strategy_returns']).cumprod()
+                
+                # Verificar os primeiros valores calculados
+                print("\nDebug - Primeiros valores calculados:")
+                print(f"Primeiros strategy_returns:\n{self.results['strategy_returns'].head()}")
+                print(f"\nPrimeiros equity:\n{self.results['equity'].head()}")
+                
+                # Calcular posição
+                self.results['position'] = self.results['signal'] * self.results['size']
+                
+            self.results = self.results.fillna(0)
+            
+        except Exception as e:
+            print(f"Erro na preparação dos resultados: {str(e)}")
 
     def analyze(self) -> Dict:
         """Calculate and return performance metrics"""
@@ -17,15 +48,19 @@ class PerformanceAnalyzer:
             equity = self.results['equity'].astype(float)
             returns = self.results['strategy_returns'].astype(float).fillna(0)
             
-            # Calcular retornos
-            initial_equity = equity.iloc[0]
-            final_equity = equity.iloc[-1]
+            # Garantir que temos o capital inicial correto
+            initial_equity = equity.iloc[0]  # Pega o primeiro valor da série equity
+            final_equity = equity.iloc[-1]   # Pega o último valor
             
-            if initial_equity > 0:  # Evitar divisão por zero
-                total_return = ((final_equity / initial_equity) - 1) * 100
-            else:
-                total_return = 0
-                
+            # Verificar valores para debug
+            print(f"\nDebug - Valores de Equity:")
+            print(f"Primeiro valor equity: {initial_equity}")
+            print(f"Último valor equity: {final_equity}")
+            print(f"Primeiros 5 valores de equity:\n{equity.head()}")
+            
+            # Calcular retorno total
+            total_return = ((final_equity / initial_equity) - 1) * 100 if initial_equity > 0 else 0
+            
             metrics = {
                 'Initial Capital': f"${initial_equity:,.2f}",
                 'Final Capital': f"${final_equity:,.2f}",
@@ -40,10 +75,112 @@ class PerformanceAnalyzer:
             }
             
             return metrics
-            
+                
         except Exception as e:
             print(f"Erro no cálculo de métricas: {str(e)}")
             return self._get_default_metrics()
+
+    def plot_results(self, strategy_name):
+        """Plota os resultados do backtest"""
+        try:
+            # Criar gráfico com subplots
+            fig = make_subplots(
+                rows=3, cols=1,
+                shared_xaxes=True,
+                vertical_spacing=0.05,
+                row_heights=[0.5, 0.25, 0.25],
+                subplot_titles=("Price & Signals", "Equity Curve", "Drawdown")
+            )
+
+            # Adicionar candlesticks
+            fig.add_trace(
+                go.Candlestick(
+                    x=self.strategy_data.index,
+                    open=self.strategy_data['open'],
+                    high=self.strategy_data['high'],
+                    low=self.strategy_data['low'],
+                    close=self.strategy_data['close'],
+                    name="OHLC"
+                ),
+                row=1, col=1
+            )
+
+            # Adicionar sinais de compra/venda
+            if 'signal' in self.results:
+                longs = self.results[self.results['signal'] > 0]
+                shorts = self.results[self.results['signal'] < 0]
+                
+                # Plotar pontos de entrada long
+                fig.add_trace(
+                    go.Scatter(
+                        x=longs.index,
+                        y=self.strategy_data.loc[longs.index, 'low'] * 0.999,
+                        mode='markers',
+                        marker=dict(symbol='triangle-up', size=10, color='green'),
+                        name='Long Entry'
+                    ),
+                    row=1, col=1
+                )
+                
+                # Plotar pontos de entrada short
+                fig.add_trace(
+                    go.Scatter(
+                        x=shorts.index,
+                        y=self.strategy_data.loc[shorts.index, 'high'] * 1.001,
+                        mode='markers',
+                        marker=dict(symbol='triangle-down', size=10, color='red'),
+                        name='Short Entry'
+                    ),
+                    row=1, col=1
+                )
+
+            # Adicionar equity curve
+            if 'equity' in self.results.columns:
+                fig.add_trace(
+                    go.Scatter(
+                        x=self.results.index,
+                        y=self.results['equity'],
+                        name="Equity",
+                        line=dict(color='blue')
+                    ),
+                    row=2, col=1
+                )
+
+            # Adicionar drawdown
+            if 'equity' in self.results.columns:
+                equity = self.results['equity']
+                peak = equity.expanding().max()
+                drawdown = ((equity - peak) / peak) * 100
+                
+                fig.add_trace(
+                    go.Scatter(
+                        x=self.results.index,
+                        y=drawdown,
+                        name="Drawdown",
+                        line=dict(color='red')
+                    ),
+                    row=3, col=1
+                )
+
+            # Configurar layout
+            fig.update_layout(
+                title=f"{strategy_name} - Backtest Results",
+                height=1000,
+                showlegend=True,
+                xaxis_rangeslider_visible=False
+            )
+
+            # Atualizar labels dos eixos
+            fig.update_yaxes(title_text="Price", row=1, col=1)
+            fig.update_yaxes(title_text="Equity ($)", row=2, col=1)
+            fig.update_yaxes(title_text="Drawdown (%)", row=3, col=1)
+
+            # Mostrar figura
+            fig.show()
+            
+        except Exception as e:
+            print(f"Erro na plotagem dos resultados: {e}")
+            print(f"Detalhes do erro: {str(e)}")
     
     def _calculate_annual_return(self, total_return: float) -> float:
         years = len(self.results) / 252  # 252 dias úteis no ano
@@ -88,134 +225,3 @@ class PerformanceAnalyzer:
             'total_trades': '0',
             'profit_factor': '0.00'
         }
-    def plot_results(self, strategy_name: str):
-        """Plot backtest results"""
-        fig = make_subplots(
-            rows=3, cols=1,
-            shared_xaxes=True,
-            subplot_titles=('Price and Signals', 'Equity Curve', 'Drawdown'),
-            vertical_spacing=0.05,
-            row_heights=[0.5, 0.3, 0.2]
-        )
-
-        # Price chart
-        fig.add_trace(go.Candlestick(
-            x=self.strategy_data.index,
-            open=self.strategy_data['Open'],
-            high=self.strategy_data['High'],
-            low=self.strategy_data['Low'],
-            close=self.strategy_data['Close'],
-            name='Price'
-        ), row=1, col=1)
-
-        # Adicionar sinais ao gráfico de preço
-        buy_signals = self.results[self.results['position'] == 1].index
-        sell_signals = self.results[self.results['position'] == -1].index
-
-        if len(buy_signals) > 0:
-            fig.add_trace(go.Scatter(
-                x=buy_signals,
-                y=self.strategy_data.loc[buy_signals, 'Low'] * 0.999,
-                mode='markers',
-                marker=dict(symbol='triangle-up', size=10, color='green'),
-                name='Buy Signal'
-            ), row=1, col=1)
-
-        if len(sell_signals) > 0:
-            fig.add_trace(go.Scatter(
-                x=sell_signals,
-                y=self.strategy_data.loc[sell_signals, 'High'] * 1.001,
-                mode='markers',
-                marker=dict(symbol='triangle-down', size=10, color='red'),
-                name='Sell Signal'
-            ), row=1, col=1)
-
-        # Equity curve
-        fig.add_trace(go.Scatter(
-            x=self.results.index,
-            y=self.results['equity'],
-            name='Equity',
-            line=dict(color='green')
-        ), row=2, col=1)
-
-        # Drawdown
-        drawdown = ((self.results['equity'] - self.results['equity'].cummax()) / 
-                   self.results['equity'].cummax() * 100)
-        fig.add_trace(go.Scatter(
-            x=self.results.index,
-            y=drawdown,
-            name='Drawdown',
-            fill='tozeroy',
-            line=dict(color='red')
-        ), row=3, col=1)
-
-        # Update layout
-        fig.update_layout(
-            title=f'{strategy_name} Backtest Results',
-            height=1000,
-            showlegend=True,
-            xaxis3_title='Date',
-            yaxis_title='Price',
-            yaxis2_title='Equity',
-            yaxis3_title='Drawdown %'
-        )
-
-        fig.show()
-
-    def detailed_analysis(self) -> Dict:
-        """Análise detalhada das operações"""
-        try:
-            trades = self._extract_trades()
-            
-            analysis = {
-                'Trade Analysis': {
-                    'Average Trade Duration': self._calculate_trade_duration(trades),
-                    'Best Trade': f"${trades['profit'].max():.2f}",
-                    'Worst Trade': f"${trades['profit'].min():.2f}",
-                    'Average Profit': f"${trades['profit'].mean():.2f}",
-                    'Average Loss': f"${trades['profit'][trades['profit'] < 0].mean():.2f}",
-                    'Profit Distribution': self._analyze_profit_distribution(trades),
-                    'Time Analysis': self._analyze_time_periods(trades),
-                },
-                'Risk Analysis': {
-                    'Average Drawdown': f"{self._calculate_avg_drawdown():.2f}%",
-                    'Recovery Factor': self._calculate_recovery_factor(),
-                    'Risk-Adjusted Return': self._calculate_risk_adjusted_return(),
-                    'Win Streak': self._calculate_streaks()['win'],
-                    'Loss Streak': self._calculate_streaks()['loss'],
-                }
-            }
-            
-            return analysis
-        except Exception as e:
-            print(f"Erro na análise detalhada: {str(e)}")
-            return {}
-
-    def _extract_trades(self) -> pd.DataFrame:
-        """Extrai informações detalhadas das operações"""
-        trades = []
-        position = 0
-        entry_price = 0
-        entry_time = None
-        
-        for idx, row in self.results.iterrows():
-            if row['position'] != position:
-                if position != 0:  # Fechando posição
-                    profit = (row['close'] - entry_price) * position
-                    trades.append({
-                        'entry_time': entry_time,
-                        'exit_time': idx,
-                        'duration': (idx - entry_time).total_seconds() / 3600,  # em horas
-                        'entry_price': entry_price,
-                        'exit_price': row['close'],
-                        'position': position,
-                        'profit': profit
-                    })
-                if row['position'] != 0:  # Abrindo nova posição
-                    position = row['position']
-                    entry_price = row['close']
-                    entry_time = idx
-                else:
-                    position = 0
-                    
-        return pd.DataFrame(trades)

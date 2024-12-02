@@ -8,7 +8,7 @@ class EconomicDataCollector:
         self.logger = logging.getLogger(__name__)
         self.base_urls = {
             'bcb': 'https://api.bcb.gov.br/dados/serie/bcdata.sgs.{}/dados',
-            'fred': 'https://api.stlouisfed.org/fred/series/observations'
+            'fred': 'https://api.fred.stlouisfed.org/fred/series/observations'
         }
         
         # Códigos das séries do BCB
@@ -27,23 +27,30 @@ class EconomicDataCollector:
             end_date: Data final (YYYY-MM-DD)
         """
         try:
+            # Converte as datas para o formato esperado pelo BCB (DD/MM/YYYY)
+            start = datetime.strptime(start_date, '%Y-%m-%d').strftime('%d/%m/%Y')
+            end = datetime.strptime(end_date, '%Y-%m-%d').strftime('%d/%m/%Y')
+            
             url = self.base_urls['bcb'].format(series_code)
             params = {
                 'formato': 'json',
-                'dataInicial': start_date.replace('-', ''),
-                'dataFinal': end_date.replace('-', '')
+                'dataInicial': start,
+                'dataFinal': end
             }
             
+            self.logger.info(f"Buscando dados do BCB: série {series_code} de {start} até {end}")
             response = requests.get(url, params=params)
+            
             if response.ok:
                 data = response.json()
                 df = pd.DataFrame(data)
-                df['data'] = pd.to_datetime(df['data'])
-                df = df.set_index('data')
-                return df
-            else:
-                self.logger.warning(f"Erro ao coletar dados do BCB: {response.status_code}")
-                return pd.DataFrame()
+                if not df.empty:
+                    df['data'] = pd.to_datetime(df['data'], format='%d/%m/%Y')
+                    df = df.set_index('data')
+                    return df
+                
+            self.logger.warning(f"Erro ao coletar dados do BCB: {response.status_code}")
+            return pd.DataFrame()
                 
         except Exception as e:
             self.logger.error(f"Erro ao coletar dados do BCB: {str(e)}")
@@ -53,7 +60,7 @@ class EconomicDataCollector:
                        start_date: str, end_date: str) -> pd.DataFrame:
         """Busca dados do Federal Reserve Economic Data (FRED)."""
         try:
-            url = self.base_urls['fred']
+            url = f"{self.base_urls['fred']}"
             params = {
                 'series_id': series_id,
                 'api_key': api_key,
@@ -62,17 +69,21 @@ class EconomicDataCollector:
                 'observation_end': end_date
             }
             
+            self.logger.info(f"Buscando dados do FRED: série {series_id}")
             response = requests.get(url, params=params)
+            
             if response.ok:
-                data = response.json()['observations']
-                df = pd.DataFrame(data)
-                df['date'] = pd.to_datetime(df['date'])
-                df = df.set_index('date')
-                df['value'] = pd.to_numeric(df['value'], errors='coerce')
-                return df
-            else:
-                self.logger.warning(f"Erro ao coletar dados do FRED: {response.status_code}")
-                return pd.DataFrame()
+                data = response.json().get('observations', [])
+                if data:
+                    df = pd.DataFrame(data)
+                    df['date'] = pd.to_datetime(df['date'])
+                    df = df.set_index('date')
+                    df['value'] = pd.to_numeric(df['value'], errors='coerce')
+                    return df
+                    
+            self.logger.warning(f"Erro ao coletar dados do FRED: {response.status_code}")
+            print(f"URL da requisição FRED: {response.url}")
+            return pd.DataFrame()
                 
         except Exception as e:
             self.logger.error(f"Erro ao coletar dados do FRED: {str(e)}")

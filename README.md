@@ -1,102 +1,58 @@
-# Enhanced Mini-Dólar Trading Strategy
+# Mini Dólar (WDO) Trading Strategy
 
-Este projeto implementa uma estratégia avançada de trading para o mini contrato de dólar (WDO) utilizando uma combinação de machine learning e análise técnica.
+## Projeto de Machine Learning para Análise de Preços dos Contratos de WDO
 
-## Características Principais
+Este projeto combina análise técnica e fundamentalista usando machine learning para prever preços dos mini contratos de dólar (WDO).
 
-### 1. Análise de Contexto de Mercado
-- Identificação de horários importantes (9h-10h, 10:30-11:30, 15h-16h)
-- Volume Profile e Point of Control (POC)
-- Referências do dia anterior
+## Estrutura do Projeto
 
-### 2. Indicadores Técnicos Avançados
-- EMAs adaptativas (9 e 21 períodos)
-- RSI com detecção de divergências
-- ATR para análise de volatilidade
-- Bandas de Bollinger
-- Análise de volume relativo
+```
+├── data/
+│   ├── raw/                 # Dados brutos coletados
+│   ├── processed/           # Dados processados para análise
+│   └── external/            # Dados externos (indicadores econômicos, etc)
+├── notebooks/              # Jupyter notebooks para análise e experimentação
+├── src/
+│   ├── data/               # Scripts para coleta e processamento de dados
+│   ├── features/           # Scripts para engenharia de features
+│   ├── models/             # Implementação dos modelos
+│   └── visualization/      # Scripts para visualização
+├── tests/                  # Testes unitários
+├── config/                 # Arquivos de configuração
+└── requirements.txt        # Dependências do projeto
+```
 
-### 3. Sistema de Sinais Combinados
-- Scalping em tendência forte
-- Reversão em extremos com confirmação
-- Breakout de ranges
+## Componentes Principais
 
-### 4. Gestão de Risco Dinâmica
-- Sizing baseado em volatilidade
-- Stop loss adaptativo
-- Filtros de volume e volatilidade
+1. **Análise Fundamentalista**
+   - Coleta de dados econômicos e financeiros
+   - Análise de sentimentos de notícias usando NLP
+   - Integração com indicadores macroeconômicos
 
-### 5. Machine Learning Otimizado
-- Random Forest Classifier
-- Features selecionadas especificamente para WDO
-- Normalização adaptativa dos dados
+2. **Análise Técnica**
+   - Processamento de dados históricos
+   - Implementação de indicadores técnicos
+   - Identificação de padrões de preço
+
+3. **Modelo Integrado**
+   - Combinação de análises técnica e fundamentalista
+   - Pipeline de previsão de preços
+   - Validação e backtesting
 
 ## Instalação
 
-1. Clone o repositório:
-```bash
-git clone https://github.com/Rpinto003/mini-dolar-strategy.git
-cd mini-dolar-strategy
-```
-
-2. Instale as dependências:
 ```bash
 pip install -r requirements.txt
 ```
 
-3. Instale o TA-Lib:
-Windows:
-```bash
-pip install TA-Lib
-```
-Linux:
-```bash
-sudo apt-get update
-sudo apt-get install ta-lib
-pip install TA-Lib
-```
-
-## Configuração
-
-1. Ajuste o caminho do banco de dados em `main.py`:
-```python
-db_path = "caminho/para/seu/banco/candles.db"
-```
-
-2. Configure os parâmetros da estratégia em `enhanced_strategy.py` conforme necessário.
-
 ## Uso
 
-1. Execute a estratégia:
-```bash
-python main.py
-```
+[Em desenvolvimento]
 
-2. Analise os resultados nos gráficos e métricas gerados.
-
-## Estrutura do Projeto
-
-- `main.py`: Ponto de entrada do programa
-- `enhanced_strategy.py`: Implementação da estratégia avançada
-- `backtest.py`: Sistema de backtest
-- `data.py`: Carregamento e processamento de dados
-- `analysis.py`: Análise de performance
-
-## Notas Importantes
-
-1. Horários de Operação
-   - A estratégia opera principalmente durante o horário comercial (9h-17h)
-   - Evita operações no horário de almoço (12h-13h)
-
-2. Gestão de Risco
-   - Tamanho máximo da posição: 2 contratos
-   - Stop loss dinâmico baseado em ATR
-   - Filtros de volume e volatilidade
-
-## Contribuições
+## Contribuição
 
 Contribuições são bem-vindas! Por favor, sinta-se à vontade para abrir issues ou enviar pull requests.
 
 ## Licença
 
-Este projeto está licenciado sob a licença MIT.
+[MIT](LICENSE)

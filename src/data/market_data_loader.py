@@ -17,14 +17,16 @@ class MarketDataLoader:
         # Define path padrão se não fornecido
         if db_path is None:
             db_path = os.path.join(
-                Path(__file__).parent.parent.parent,
-                'data',
-                'database',
+                Path(__file__).parent,
                 'candles.db'
             )
             
         self.db_path = db_path
         self.logger.info(f"Usando banco de dados: {self.db_path}")
+        
+        # Verifica se o arquivo existe
+        if not os.path.exists(self.db_path):
+            self.logger.warning(f"Arquivo de banco de dados não encontrado: {self.db_path}")
     
     def load_data(self, start_date: str = None, end_date: str = None) -> pd.DataFrame:
         """Carrega dados do banco SQLite.

@@ -1,42 +1,49 @@
 import yfinance as yf
 import pandas as pd
 from datetime import datetime, timedelta
+import logging
+
+logger = logging.getLogger(__name__)
 
 def fetch_wdo_data(start_date: str, end_date: str) -> pd.DataFrame:
-    """Fetch WDO (Mini Dollar Futures) market data.
+    """Coleta dados históricos do mini dólar (WDO).
     
     Args:
-        start_date (str): Start date in YYYY-MM-DD format
-        end_date (str): End date in YYYY-MM-DD format
+        start_date (str): Data inicial no formato 'YYYY-MM-DD'
+        end_date (str): Data final no formato 'YYYY-MM-DD'
         
     Returns:
-        pd.DataFrame: DataFrame containing market data
+        pd.DataFrame: DataFrame com dados OHLCV do WDO
     """
-    # TODO: Implement actual WDO data fetching
-    # This is a placeholder using USD/BRL data
-    ticker = 'BRL=X'
-    df = yf.download(ticker, start=start_date, end=end_date)
-    return df
-
-def fetch_economic_indicators() -> pd.DataFrame:
-    """Fetch relevant economic indicators.
-    
-    Returns:
-        pd.DataFrame: DataFrame containing economic indicators
-    """
-    # TODO: Implement economic indicators collection
-    pass
+    try:
+        # Por enquanto, usamos o USD/BRL como proxy
+        ticker = 'BRL=X'
+        df = yf.download(ticker, start=start_date, end=end_date)
+        
+        if df.empty:
+            logger.warning(f"Nenhum dado encontrado para o período {start_date} a {end_date}")
+            return pd.DataFrame()
+            
+        logger.info(f"Dados coletados com sucesso: {len(df)} registros")
+        return df
+        
+    except Exception as e:
+        logger.error(f"Erro ao coletar dados do WDO: {str(e)}")
+        return pd.DataFrame()
 
 def main():
-    # Example usage
+    """Função principal para teste."""
     end_date = datetime.now()
-    start_date = end_date - timedelta(days=365)
+    start_date = end_date - timedelta(days=30)
     
-    df = fetch_wdo_data(
+    data = fetch_wdo_data(
         start_date.strftime('%Y-%m-%d'),
         end_date.strftime('%Y-%m-%d')
     )
-    print(df.head())
-
+    
+    if not data.empty:
+        print("\nDados coletados:")
+        print(data.head())
+    
 if __name__ == '__main__':
     main()

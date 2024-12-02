@@ -46,12 +46,16 @@ class EconomicDataCollector:
             start = datetime.strptime(start_date, '%Y-%m-%d').strftime('%d/%m/%Y')
             end = datetime.strptime(end_date, '%Y-%m-%d').strftime('%d/%m/%Y')
             
+<<<<<<< Updated upstream
             # Monta a URL
+=======
+>>>>>>> Stashed changes
             url = self.base_urls['bcb'].format(series_code)
             params = {
                 'formato': 'json',
                 'dataInicial': start,
                 'dataFinal': end
+<<<<<<< Updated upstream
             }
             headers = {
                 'Accept': 'application/json'
@@ -85,6 +89,22 @@ class EconomicDataCollector:
                         self.logger.info(f"Dados coletados via URL alternativa: {len(df)} registros")
                         return df
             
+=======
+            }
+            
+            self.logger.info(f"Buscando dados do BCB: {url}")
+            response = requests.get(url, params=params)
+            
+            if response.ok:
+                data = response.json()
+                if data:  # Verifica se há dados
+                    df = pd.DataFrame(data)
+                    df['data'] = pd.to_datetime(df['data'], format='%d/%m/%Y')
+                    df['valor'] = pd.to_numeric(df['valor'], errors='coerce')
+                    df = df.set_index('data')
+                    return df
+                
+>>>>>>> Stashed changes
             self.logger.warning(f"Erro na resposta do BCB: {response.status_code}")
             return pd.DataFrame()
                 
@@ -115,6 +135,10 @@ class EconomicDataCollector:
             self.logger.info(f"Buscando dados do FRED: {series_id}")
             
             response = requests.get(url, params=params)
+<<<<<<< Updated upstream
+=======
+            self.logger.info(f"Status FRED: {response.status_code}")
+>>>>>>> Stashed changes
             
             if response.ok:
                 data = response.json()
@@ -123,10 +147,19 @@ class EconomicDataCollector:
                     df['date'] = pd.to_datetime(df['date'])
                     df = df.set_index('date')
                     df['value'] = pd.to_numeric(df['value'], errors='coerce')
+<<<<<<< Updated upstream
                     self.logger.info(f"Dados do FRED coletados: {len(df)} registros")
                     return df
             
             self.logger.warning(f"Erro na resposta FRED: {response.status_code}")
+=======
+                    return df
+                else:
+                    self.logger.warning("Resposta FRED sem observações")
+            else:
+                self.logger.warning(f"Erro na resposta FRED: {response.text}")
+            
+>>>>>>> Stashed changes
             return pd.DataFrame()
                 
         except Exception as e:
@@ -138,9 +171,15 @@ class EconomicDataCollector:
         """Coleta todos os indicadores configurados.
         
         Args:
+<<<<<<< Updated upstream
             start_date: Data inicial (YYYY-MM-DD), opcional
             end_date: Data final (YYYY-MM-DD), opcional
             fred_api_key: Chave de API do FRED, opcional
+=======
+            start_date: Data inicial (YYYY-MM-DD)
+            end_date: Data final (YYYY-MM-DD)
+            fred_api_key: Chave de API do FRED (opcional)
+>>>>>>> Stashed changes
             
         Returns:
             dict: Dicionário com DataFrames dos indicadores
@@ -164,11 +203,16 @@ class EconomicDataCollector:
             )
             
             if not df.empty:
+<<<<<<< Updated upstream
                 data[f'bcb_{nome.lower()}'] = df
                 self.logger.info(
                     f"Dados do BCB coletados: {nome} - {len(df)} registros "
                     f"({df.index.min()} até {df.index.max()})"
                 )
+=======
+                data[f'bcb_{name}'] = df
+                self.logger.info(f"Dados do BCB coletados: {name} - {len(df)} registros")
+>>>>>>> Stashed changes
         
         # Coleta dados do FRED se a API key estiver disponível
         if fred_api_key:
@@ -188,9 +232,13 @@ class EconomicDataCollector:
                 
                 if not df.empty:
                     data[f'fred_{name}'] = df
+<<<<<<< Updated upstream
                     self.logger.info(
                         f"Dados do FRED coletados: {name} - {len(df)} registros "
                         f"({df.index.min()} até {df.index.max()})"
                     )
+=======
+                    self.logger.info(f"Dados do FRED coletados: {name} - {len(df)} registros")
+>>>>>>> Stashed changes
         
         return data
